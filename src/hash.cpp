@@ -6,6 +6,7 @@
 #include <span.h>
 #include <crypto/common.h>
 #include <crypto/hmac_sha512.h>
+#include <crypto/sha3/Keccak-more-compact.c> // Inclure SHA3
 
 #include <bit>
 #include <string>
@@ -78,7 +79,8 @@ void BIP32Hash(const ChainCode &chainCode, unsigned int nChild, unsigned char he
 uint256 SHA256Uint256(const uint256& input)
 {
     uint256 result;
-    CSHA256().Write(input.begin(), 32).Finalize(result.begin());
+    // Utiliser Keccak pour SHA3-256
+    Keccak(result.begin(), 32, input.begin(), 32, 256); // SHA3-256: output size = 256 bits (32 bytes)
     return result;
 }
 
@@ -86,7 +88,8 @@ HashWriter TaggedHash(const std::string& tag)
 {
     HashWriter writer{};
     uint256 taghash;
-    CSHA256().Write((const unsigned char*)tag.data(), tag.size()).Finalize(taghash.begin());
+    // SHA3-256 pour calculer le hash du tag
+    Keccak(taghash.begin(), 32, (const unsigned char*)tag.data(), tag.size(), 256);
     writer << taghash << taghash;
     return writer;
 }
