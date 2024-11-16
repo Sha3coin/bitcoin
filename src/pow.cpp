@@ -5,6 +5,7 @@
 
 #include <pow.h>
 
+#include <crypto/sha3/Keccak-more-compact.c> // Inclure SHA3
 #include <arith_uint256.h>
 #include <chain.h>
 #include <primitives/block.h>
@@ -65,9 +66,6 @@ unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nF
 
     // Special difficulty rule for Testnet4
     if (params.enforce_BIP94) {
-        // Here we use the first block of the difficulty period. This way
-        // the real difficulty is always preserved in the first block as
-        // it is not allowed to use the min-difficulty exception.
         int nHeightFirst = pindexLast->nHeight - (params.DifficultyAdjustmentInterval()-1);
         const CBlockIndex* pindexFirst = pindexLast->GetAncestor(nHeightFirst);
         bnNew.SetCompact(pindexFirst->nBits);
@@ -139,8 +137,12 @@ bool PermittedDifficultyTransition(const Consensus::Params& params, int64_t heig
 // the most significant bit of the last byte of the hash is set.
 bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
-    if constexpr (G_FUZZING) return (hash.data()[31] & 0x80) == 0;
-    return CheckProofOfWorkImpl(hash, nBits, params);
+    // Calculer le hash SHA3-256
+    uint256 sha3Hash;
+    Keccak(sha3Hash.begin(), 32, hash.begin(), hash.size(), 256); // SHA3-256
+
+    // Vérification de la preuve de travail
+    return CheckProofOfWorkImpl(sha3Hash, nBits, params);
 }
 
 bool CheckProofOfWorkImpl(uint256 hash, unsigned int nBits, const Consensus::Params& params)

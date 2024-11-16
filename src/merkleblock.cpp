@@ -5,9 +5,9 @@
 
 #include <merkleblock.h>
 
+#include <crypto/sha3/Keccak-more-compact.c> // Inclure SHA3
 #include <hash.h>
 #include <consensus/consensus.h>
-
 
 std::vector<unsigned char> BitsToBytes(const std::vector<bool>& bits)
 {
@@ -70,8 +70,10 @@ uint256 CPartialMerkleTree::CalcHash(int height, unsigned int pos, const std::ve
             right = CalcHash(height-1, pos*2+1, vTxid);
         else
             right = left;
-        // combine subhashes
-        return Hash(left, right);
+        // combine subhashes using SHA3-256
+        uint256 result;
+        Keccak(result.begin(), 32, left.begin(), left.size() + right.size(), 256); // SHA3-256
+        return result;
     }
 }
 
@@ -128,12 +130,12 @@ uint256 CPartialMerkleTree::TraverseAndExtract(int height, unsigned int pos, uns
         } else {
             right = left;
         }
-        // and combine them before returning
-        return Hash(left, right);
+        // and combine them using SHA3-256
+        uint256 result;
+        Keccak(result.begin(), 32, left.begin(), left.size() + right.size(), 256); // SHA3-256
+        return result;
     }
-}
-
-CPartialMerkleTree::CPartialMerkleTree(const std::vector<uint256> &vTxid, const std::vector<bool> &vMatch) : nTransactions(vTxid.size()), fBad(false) {
+    CPartialMerkleTree::CPartialMerkleTree(const std::vector<uint256> &vTxid, const std::vector<bool> &vMatch) : nTransactions(vTxid.size()), fBad(false) {
     // reset state
     vBits.clear();
     vHash.clear();

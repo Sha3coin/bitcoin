@@ -6,7 +6,7 @@
 #include <primitives/transaction.h>
 
 #include <consensus/amount.h>
-#include <crypto/hex_base.h>
+#include <crypto/sha3/Keccak-more-compact.c> // Inclure SHA3
 #include <hash.h>
 #include <script/script.h>
 #include <serialize.h>
@@ -68,7 +68,10 @@ CMutableTransaction::CMutableTransaction(const CTransaction& tx) : vin(tx.vin), 
 
 Txid CMutableTransaction::GetHash() const
 {
-    return Txid::FromUint256((HashWriter{} << TX_NO_WITNESS(*this)).GetHash());
+    // Utiliser Keccak (SHA3-256) pour calculer le hachage
+    uint256 hash;
+    Keccak(hash.begin(), 32, (HashWriter{} << TX_NO_WITNESS(*this)).GetHash().begin(), 32, 256);
+    return Txid::FromUint256(hash);
 }
 
 bool CTransaction::ComputeHasWitness() const
@@ -80,7 +83,10 @@ bool CTransaction::ComputeHasWitness() const
 
 Txid CTransaction::ComputeHash() const
 {
-    return Txid::FromUint256((HashWriter{} << TX_NO_WITNESS(*this)).GetHash());
+    // Utiliser Keccak (SHA3-256) pour calculer le hachage
+    uint256 hash;
+    Keccak(hash.begin(), 32, (HashWriter{} << TX_NO_WITNESS(*this)).GetHash().begin(), 32, 256);
+    return Txid::FromUint256(hash);
 }
 
 Wtxid CTransaction::ComputeWitnessHash() const
@@ -89,7 +95,10 @@ Wtxid CTransaction::ComputeWitnessHash() const
         return Wtxid::FromUint256(hash.ToUint256());
     }
 
-    return Wtxid::FromUint256((HashWriter{} << TX_WITH_WITNESS(*this)).GetHash());
+    // Utiliser Keccak (SHA3-256) pour calculer le hachage
+    uint256 hash;
+    Keccak(hash.begin(), 32, (HashWriter{} << TX_WITH_WITNESS(*this)).GetHash().begin(), 32, 256);
+    return Wtxid::FromUint256(hash);
 }
 
 CTransaction::CTransaction(const CMutableTransaction& tx) : vin(tx.vin), vout(tx.vout), version{tx.version}, nLockTime{tx.nLockTime}, m_has_witness{ComputeHasWitness()}, hash{ComputeHash()}, m_witness_hash{ComputeWitnessHash()} {}
